@@ -33,7 +33,7 @@ export default class MyDocument extends Document {
     return (
       <Html>
         <Head>
-          <title>NextJS Antd Styled Starter</title>
+          <title>GPT-3 Tools</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <body>

@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
 import { Layout, Menu } from 'antd';
-import { HomeOutlined, UserOutlined, BookOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { HomeOutlined, BookOutlined } from '@ant-design/icons';
 
 const { Sider: AntSider } = Layout;
 
@@ -35,14 +35,14 @@ export const SideNav: FC<SideNavProps> = ({ selected, collapsed, setCollapsed }:
       left: 0,
     }}
   >
-    <Logo>X-Tech</Logo>
+    <Logo>GPT-3 Tools</Logo>
     <Menu theme="dark" mode="inline" defaultSelectedKeys={[selected]}>
       <Menu.Item key="/" icon={<HomeOutlined />}>
         <Link href="/">Home</Link>
       </Menu.Item>
-      {/* <Menu.Item key="/search" icon={<SearchOutlined />}>
-        <Link href="/search">Search</Link>
-      </Menu.Item> */}
+      <Menu.Item key="/training-data" icon={<BookOutlined />}>
+        <Link href="/training-data">Training Data</Link>
+      </Menu.Item>
     </Menu>
   </Sider>
 );
