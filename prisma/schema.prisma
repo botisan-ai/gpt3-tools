@@ -1,0 +1,29 @@
+datasource db {
+  provider = "sqlite"
+  url = "file:../db.sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated-client"
+}
+
+model FinetuneDataSet {
+  id        Int      @default(autoincrement()) @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String
+  promptTemplate  String?
+  completionTemplate  String?
+  data FinetuneData[]
+}
+
+model FinetuneData {
+  id        Int      @default(autoincrement()) @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  dataSet   FinetuneDataSet @relation(fields: [dataSetId], references: [id])
+  dataSetId Int @unique
+  prompt     String
+  completion    String
+}
