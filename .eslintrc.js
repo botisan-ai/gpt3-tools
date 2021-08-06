@@ -1,0 +1,31 @@
+module.exports = {
+  root: true,
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: 'tsconfig.json',
+    sourceType: 'module',
+  },
+  plugins: ['@typescript-eslint'],
+  extends: [
+    'prettier',
+    'airbnb-typescript',
+    'airbnb/hooks',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
+  ],
+  ignorePatterns: ['node_modules/', 'next.config.js', '*.d.ts', '.eslintrc.js'],
+  rules: {
+    'consistent-return': 'warn',
+    'global-require': 'warn',
+    'max-len': ['warn', 150],
+    'no-mixed-operators': 'off',
+    'no-underscore-dangle': 'off',
+    'object-curly-newline': 'off',
+    'jsx-a11y/anchor-is-valid': 'off',
+    'import/prefer-default-export': 'off',
+    'react/jsx-props-no-spreading': 'off',
+    'react/require-default-props': 'warn',
+    '@typescript-eslint/no-use-before-define': 'off',
+  },
+};
