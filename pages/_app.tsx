@@ -1,3 +1,4 @@
+import 'tailwindcss/tailwind.css';
 import 'antd/dist/antd.css';
 
 import React from 'react';

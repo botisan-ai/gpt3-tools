@@ -14,7 +14,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
   ],
-  ignorePatterns: ['node_modules/', 'next.config.js', '*.d.ts', '.eslintrc.js', 'prisma/generated-client/'],
+  ignorePatterns: ['node_modules/', '*.config.js', '*.d.ts', '.eslintrc.js', 'prisma/generated-client/'],
   rules: {
     'consistent-return': 'warn',
     'global-require': 'warn',
