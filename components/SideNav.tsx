@@ -1,21 +1,9 @@
 import React, { FC } from 'react';
-import styled from 'styled-components';
 import Link from 'next/link';
 import { Layout, Menu } from 'antd';
 import { HomeOutlined, BookOutlined } from '@ant-design/icons';
 
-const { Sider: AntSider } = Layout;
-
-const Logo = styled.div`
-  height: 32px;
-  margin: 16px;
-  color: white;
-  //background: rgba(255, 255, 255, 0.2);
-`;
-
-const Sider = styled(AntSider)`
-  z-index: 2000;
-`;
+const { Sider } = Layout;
 
 interface SideNavProps {
   selected: string;
@@ -25,6 +13,7 @@ interface SideNavProps {
 
 export const SideNav: FC<SideNavProps> = ({ selected, collapsed, setCollapsed }: SideNavProps) => (
   <Sider
+    className="z-50"
     collapsible
     collapsed={collapsed}
     onCollapse={() => setCollapsed(!collapsed)}
@@ -35,13 +24,13 @@ export const SideNav: FC<SideNavProps> = ({ selected, collapsed, setCollapsed }:
       left: 0,
     }}
   >
-    <Logo>GPT-3 Tools</Logo>
+    <div className="h-8 m-4 text-white">GPT-3 Tools</div>
     <Menu theme="dark" mode="inline" defaultSelectedKeys={[selected]}>
       <Menu.Item key="/" icon={<HomeOutlined />}>
         <Link href="/">Home</Link>
       </Menu.Item>
-      <Menu.Item key="/training-data" icon={<BookOutlined />}>
-        <Link href="/training-data">Training Data</Link>
+      <Menu.Item key="/finetune-data-sets" icon={<BookOutlined />}>
+        <Link href="/finetune-data-sets">Finetune Data Sets</Link>
       </Menu.Item>
     </Menu>
   </Sider>

@@ -1,6 +1,11 @@
 import React from 'react';
 import Head from 'next/head';
+
+import { Typography } from 'antd';
+
 import { AppLayout } from '../components/AppLayout';
+
+const { Title, Paragraph } = Typography;
 
 export default function IndexPage() {
   return (
@@ -8,8 +13,8 @@ export default function IndexPage() {
       <Head>
         <title>GPT-3 Tools</title>
       </Head>
-      <h2 style={{ padding: '5px' }}>Hello!</h2>
-      <p style={{ padding: '5px' }}>This is a UI Tool for GPT-3.</p>
+      <Title level={2}>Hello!</Title>
+      <Paragraph>This is a UI Tool for GPT-3.</Paragraph>
     </AppLayout>
   );
 }

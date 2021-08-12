@@ -23,28 +23,6 @@ const ContentContainer = styled.div`
   }
 `;
 
-const AppContent = styled(Content)`
-  padding-bottom: 70px;
-`;
-
-const AppFooter = styled(Layout)`
-  position: fixed;
-  bottom: 0px;
-  width: 100%;
-  height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const LoadingContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-
 interface AppLayoutProps {
   children?: ReactNode;
 }
@@ -56,11 +34,16 @@ export const AppLayout: FC<AppLayoutProps> = ({ children }: AppLayoutProps) => {
   return (
     <MainContainer style={{ marginLeft: collapsed ? '80px' : '200px' }}>
       <SideNav selected={router.pathname} collapsed={collapsed} setCollapsed={setCollapsed} />
-      <Layout>
-        <AppContent>
+      <Layout className="bg-white">
+        <Content className="p-4 pb-20">
           <ContentContainer>{children}</ContentContainer>
-        </AppContent>
-        <AppFooter style={{ textAlign: 'center', paddingRight: collapsed ? '80px' : '200px' }}>Made with &lt;3 by X-Tech in 2021</AppFooter>
+        </Content>
+        <Footer
+          className="footer w-full h-20 flex text-center items-center justify-center fixed bottom-0"
+          style={{ paddingRight: collapsed ? '80px' : '200px' }}
+        >
+          Made with &lt;3 by X-Tech in 2021
+        </Footer>
       </Layout>
     </MainContainer>
   );
