@@ -22,7 +22,7 @@ model FinetuneData {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   dataSet   FinetuneDataSet @relation(fields: [dataSetId], references: [id])
-  dataSetId Int @unique
+  dataSetId Int
   prompt     String
   completion    String
 }
