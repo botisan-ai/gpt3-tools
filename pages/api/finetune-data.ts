@@ -20,14 +20,15 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
       if (!dataSetId) {
         throw new Error('dataSetId is required');
       }
-
       const response = await prisma.finetuneData.create({
         data,
       });
 
       res.statusCode = 200;
-      res.json({ newData: response });
-    } else if (req.method === 'PUT') {
+      res.json({ data: response });
+      return;
+    }
+    if (req.method === 'PUT') {
       const data = JSON.parse(req.body);
       const { id, dataSetId } = data;
 
@@ -51,7 +52,7 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
     } /* req.method === 'GET' */ else if (req.query.dataSetId) {
       const data = await prisma.finetuneData.findMany({
         where: {
-          id: Number(req.query.dataSetId),
+          dataSetId: Number(req.query.dataSetId),
         },
       });
       res.statusCode = 200;

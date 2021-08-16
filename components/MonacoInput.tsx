@@ -40,6 +40,13 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInp
     }
   }, [editorValue, shouldStopUpdating]);
 
+  const handleChange = (val: any) => {
+    setEditorValue(val);
+    if (onChange) {
+      onChange(val);
+    }
+  };
+
   return (
     <Editor
       options={{
@@ -52,7 +59,7 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInp
       defaultLanguage="handlebars"
       height="100px"
       onMount={setUpRef}
-      onChange={onChange}
+      onChange={(val) => handleChange(val)}
     />
   );
 };

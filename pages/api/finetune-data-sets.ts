@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { PrismaClient, FinetuneDataSet } from '@prisma/client';
+import { PrismaClient, FinetuneDataSet, FineTuneData } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -37,6 +37,14 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       res.statusCode = 200;
       res.json({ updateDataSet: response });
+    } else if (req.method === 'DELETE' && req.query.dataSetId) {
+      const [_, data] = await prisma.$transaction([
+        prisma.finetuneData.deleteMany({ where: { dataSetId: Number(req.query.dataSetId) } }),
+        prisma.finetuneDataSet.delete({ where: { id: Number(req.query.dataSetId) } }),
+      ]);
+
+      res.statusCode = 200;
+      res.json(data);
     } /* req.method === 'GET' */ else if (req.query.dataSetId) {
       const dataSet = await prisma.finetuneDataSet.findFirst({
         where: {
