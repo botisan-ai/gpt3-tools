@@ -1,8 +1,8 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import useSWR, { mutate } from 'swr';
-import { Typography, Form, Input, Button, Space } from 'antd';
+import useSWR, { SWRResponse, mutate } from 'swr';
+import { Typography, Form, Input, Button, Space, Modal, Spin, Divider, notification, message } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 
 import { MonacoInput } from '../components/MonacoInput';
@@ -13,24 +13,66 @@ import { fetcher } from '../utils/request';
 
 const { Title, Paragraph } = Typography;
 
+interface DataSetResponse {
+  dataSet: { id: number; createdAt: Date; updatedAt: Date; title: string; promptTemplate: string; completionTemplate: string };
+}
+
+interface DataResponse {
+  data: {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
+    dataSetId: number;
+    completion: string;
+    prompt: string;
+  }[];
+}
+
 export default function FinetuneDataPage() {
   const [templateForm] = Form.useForm();
-  const [editing, setEditing] = useState(false);
   const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [isOpenEditModal, setIsOpenEditModal] = useState(false);
+  const [isTemplateSubmitLoading, setIsTemplateSubmitLoading] = useState(false);
+  const [form] = Form.useForm();
 
   const dataSetId = Number(router.query.dataSetId);
 
-  const { data: dataSetResponse, error: dataSetError } = useSWR(() => (dataSetId ? `/api/finetune-data-sets?dataSetId=${dataSetId}` : null), fetcher);
-  const { data: dataResponse, error: dataError } = useSWR(() => (dataSetId ? `/api/finetune-data?dataSetId=${dataSetId}` : null), fetcher);
+  const { data: dataSetResponse, error: dataSetError }: SWRResponse<DataSetResponse, Error> = useSWR(
+    () => (dataSetId ? `/api/finetune-data-sets?dataSetId=${dataSetId}` : null),
+    fetcher,
+  );
+  const { data: dataResponse, error: dataError }: SWRResponse<DataResponse, Error> = useSWR(
+    () => (dataSetId ? `/api/finetune-data?dataSetId=${dataSetId}` : null),
+    fetcher,
+  );
 
   const dataSet = dataSetResponse?.dataSet;
-  const data = dataResponse?.data;
+  const originData = dataResponse?.data;
 
   useEffect(() => {
-    templateForm.setFieldsValue(dataSet);
+    if (dataSet) {
+      templateForm.setFieldsValue(dataSet);
+    }
   }, [templateForm, dataSet]);
 
+  if (!dataSetResponse) {
+    return (
+      <AppLayout>
+        <Spin size="large" />
+      </AppLayout>
+    );
+  }
+
+  if (dataSetError || dataError) {
+    notification.error({
+      message: 'Failed to fetch data',
+      description: dataSetError ?? dataError,
+    });
+  }
+
   const updateValues = async (values: any) => {
+    setIsTemplateSubmitLoading(true);
     await fetch('/api/finetune-data-sets', {
       method: 'PUT',
       body: JSON.stringify({
@@ -39,9 +81,14 @@ export default function FinetuneDataPage() {
       }),
     });
     setEditing(false);
+    setIsTemplateSubmitLoading(false);
     await mutate(`/api/finetune-data-sets?dataSetId=${dataSetId}`);
     await mutate('/api/finetune-data-sets');
   };
+
+  if (!dataSetResponse || !dataResponse) {
+    return 'loading';
+  }
 
   return (
     <AppLayout>
@@ -100,33 +147,61 @@ export default function FinetuneDataPage() {
           </div>
         </div>
         <Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" loading={isTemplateSubmitLoading}>
             Update Template
           </Button>
         </Form.Item>
       </Form>
 
+      <Divider />
+
       <div className="flex flex-col justify-start">
-        <div>
-          <Button
-            type="default"
-            onClick={async () => {
-              await fetch(`/api/finetune-data?dataSetId=${dataSetId}`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  dataSetId,
-                  prompt: 'prompt',
-                  completion: 'completion',
-                }),
-              });
-              await mutate(`/api/finetune-data?dataSetId=${dataSetId}`);
-            }}
-          >
+        <div className="flex justify-between">
+          <Title className="inline-block" level={3}>
+            Finetune Data
+          </Title>
+          <Button type="default" onClick={() => setIsOpenEditModal(true)}>
             Add Row
           </Button>
         </div>
-        <FinetuneDataTable data={data} />
+
+        <FinetuneDataTable finetuneData={originData} />
       </div>
+
+      <Modal
+        title="Add row"
+        visible={isOpenEditModal}
+        onOk={async () => {
+          try {
+            await fetch(`/api/finetune-data?dataSetId=${dataSetId}`, {
+              method: 'POST',
+              body: JSON.stringify({
+                dataSetId,
+                ...form.getFieldsValue(),
+              }),
+            });
+            await mutate(`/api/finetune-data?dataSetId=${dataSetId}`);
+            form.resetFields();
+            setIsOpenEditModal(false);
+          } catch (err) {
+            notification.error({
+              message: 'Failed to add row',
+              description: err,
+            });
+          }
+        }}
+        onCancel={() => setIsOpenEditModal(false)}
+        getContainer={false}
+      >
+        <Form form={form}>
+          <Form.Item label="Prompt" name="prompt">
+            <MonacoInput />
+          </Form.Item>
+          <Form.Item label="Completion" name="completion">
+            <MonacoInput />
+          </Form.Item>
+        </Form>
+      </Modal>
     </AppLayout>
   );
 }
