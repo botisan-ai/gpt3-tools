@@ -35,7 +35,6 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
       if (!id) {
         throw new Error('id is required');
       }
-
       if (!dataSetId) {
         throw new Error('dataSetId is required');
       }
@@ -55,10 +54,12 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
           dataSetId: Number(req.query.dataSetId),
         },
       });
+
       res.statusCode = 200;
       res.json({ data });
     } else {
       const data = await prisma.finetuneData.findMany();
+
       res.statusCode = 200;
       res.json({ data });
     }
