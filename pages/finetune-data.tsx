@@ -3,13 +3,14 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import useSWR, { SWRResponse, mutate } from 'swr';
 import { Typography, Form, Input, Button, Space, Modal, Spin, Divider, notification, message } from 'antd';
-import { EditOutlined } from '@ant-design/icons';
+import { EditOutlined, DownloadOutlined } from '@ant-design/icons';
 
 import { MonacoInput } from '../components/MonacoInput';
 import { AppLayout } from '../components/AppLayout';
 import { FinetuneDataTable } from '../components/finetune-data/FinetuneDataTable';
 
-import { fetcher } from '../utils/request';
+import { fetcher, fetchText } from '../utils/request';
+import { downloadFile } from '../utils/browser';
 
 const { Title, Paragraph } = Typography;
 
@@ -30,11 +31,12 @@ interface DataResponse {
 
 export default function FinetuneDataPage() {
   const [templateForm] = Form.useForm();
+  const [addRowForm] = Form.useForm();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [isOpenEditModal, setIsOpenEditModal] = useState(false);
   const [isTemplateSubmitLoading, setIsTemplateSubmitLoading] = useState(false);
-  const [form] = Form.useForm();
+  const [isUpdateTemplateDisabled, setIsUpdateTemplateDisabled] = useState(true);
 
   const dataSetId = Number(router.query.dataSetId);
 
@@ -82,6 +84,7 @@ export default function FinetuneDataPage() {
     });
     setEditing(false);
     setIsTemplateSubmitLoading(false);
+    setIsUpdateTemplateDisabled(true);
     await mutate(`/api/finetune-data-sets?dataSetId=${dataSetId}`);
     await mutate('/api/finetune-data-sets');
   };
@@ -90,21 +93,26 @@ export default function FinetuneDataPage() {
     return 'loading';
   }
 
+  const downloadTemplate = async () => {
+    const res = await fetchText(`/api/finetune-data-sets?dataSetId=${dataSetId}&download=true`);
+    downloadFile(`${dataSet?.title}template.json`, res);
+  };
+
   return (
     <AppLayout>
       <Head>
         <title>Finetune Data - GPT-3 Tools</title>
       </Head>
-      <div className="flex flex-row justify-start">
+      <div className="flex flex-row justify-between">
         {!editing ? (
-          <>
+          <div className="flex flex-row justify-start">
             <Title className="inline-block" level={2}>
               {dataSet?.title}
             </Title>
             <a onClick={() => setEditing(!editing)}>
               <EditOutlined className="ml-2 w-6 h-6 leading-10 text-2xl" />
             </a>
-          </>
+          </div>
         ) : (
           <Form layout="inline" name="data-set-title" initialValues={{ title: dataSet?.title }} onFinish={updateValues}>
             <Form.Item name="title" rules={[{ required: true, message: 'Title is required' }]}>
@@ -120,6 +128,9 @@ export default function FinetuneDataPage() {
             </Form.Item>
           </Form>
         )}
+        <Button type="primary" onClick={() => downloadTemplate()} icon={<DownloadOutlined />} className="flex items-center">
+          Download
+        </Button>
       </div>
       <Paragraph>You can set up your GPT-3 finetuning training data here.</Paragraph>
 
@@ -136,18 +147,18 @@ export default function FinetuneDataPage() {
           <div className="container mx-auto flex flex-col">
             <Title level={4}>Prompt Template</Title>
             <Form.Item name="promptTemplate">
-              <MonacoInput />
+              <MonacoInput setIsUpdateTemplateDisabled={setIsUpdateTemplateDisabled} />
             </Form.Item>
           </div>
           <div className="container mx-auto flex flex-col">
             <Title level={4}>Completion Template</Title>
             <Form.Item name="completionTemplate">
-              <MonacoInput />
+              <MonacoInput setIsUpdateTemplateDisabled={setIsUpdateTemplateDisabled} />
             </Form.Item>
           </div>
         </div>
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={isTemplateSubmitLoading}>
+          <Button type="primary" htmlType="submit" loading={isTemplateSubmitLoading} disabled={isUpdateTemplateDisabled}>
             Update Template
           </Button>
         </Form.Item>
@@ -177,11 +188,11 @@ export default function FinetuneDataPage() {
               method: 'POST',
               body: JSON.stringify({
                 dataSetId,
-                ...form.getFieldsValue(),
+                ...addRowForm.getFieldsValue(),
               }),
             });
             await mutate(`/api/finetune-data?dataSetId=${dataSetId}`);
-            form.resetFields();
+            addRowForm.resetFields();
             setIsOpenEditModal(false);
           } catch (err) {
             notification.error({
@@ -193,7 +204,7 @@ export default function FinetuneDataPage() {
         onCancel={() => setIsOpenEditModal(false)}
         getContainer={false}
       >
-        <Form form={form}>
+        <Form form={addRowForm}>
           <Form.Item label="Prompt" name="prompt">
             <MonacoInput />
           </Form.Item>

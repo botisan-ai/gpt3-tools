@@ -6,9 +6,10 @@ const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 export interface MonacoInputProps {
   onChange?: (value?: string) => void;
   value?: string;
+  setIsUpdateTemplateDisabled: (value?: boolean) => void;
 }
 
-export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInputProps) => {
+export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange, setIsUpdateTemplateDisabled }: MonacoInputProps) => {
   const editorRef = useRef();
   const [editorValue, setEditorValue] = useState('');
   const [isRefSet, setRefSet] = useState(false);
@@ -41,6 +42,8 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInp
   }, [editorValue, shouldStopUpdating]);
 
   const handleChange = (val: any) => {
+    setIsUpdateTemplateDisabled(false);
+
     setEditorValue(val);
     if (onChange) {
       onChange(val);
