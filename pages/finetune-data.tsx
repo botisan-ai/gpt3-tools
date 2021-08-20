@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import useSWR, { SWRResponse, mutate } from 'swr';
-import { Typography, Form, Input, Button, Space, Modal, Spin, Divider, notification, message } from 'antd';
+import { Typography, Form, Input, Button, Space, Modal, Spin, Divider, notification } from 'antd';
 import { EditOutlined, DownloadOutlined } from '@ant-design/icons';
 
 import { MonacoInput } from '../components/MonacoInput';
@@ -15,7 +15,15 @@ import { downloadFile } from '../utils/browser';
 const { Title, Paragraph } = Typography;
 
 interface DataSetResponse {
-  dataSet: { id: number; createdAt: Date; updatedAt: Date; title: string; promptTemplate: string; completionTemplate: string };
+  dataSet: {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
+    title: string;
+    promptTemplate: string;
+    completionTemplate: string;
+    totalTokenCount: number | null;
+  };
 }
 
 interface DataResponse {
@@ -26,6 +34,8 @@ interface DataResponse {
     dataSetId: number;
     completion: string;
     prompt: string;
+    promptTokenCount: number;
+    completionTokenCount: number;
   }[];
 }
 
@@ -48,6 +58,8 @@ export default function FinetuneDataPage() {
     () => (dataSetId ? `/api/finetune-data?dataSetId=${dataSetId}` : null),
     fetcher,
   );
+
+  const { data: totalTokens, error: totalTokensError } = useSWR(dataSetId ? `/api/finetune-data/tokens?dataSetId=${dataSetId}` : null, fetcher);
 
   const dataSet = dataSetResponse?.dataSet;
   const originData = dataResponse?.data;
@@ -74,19 +86,27 @@ export default function FinetuneDataPage() {
   }
 
   const updateValues = async (values: any) => {
-    setIsTemplateSubmitLoading(true);
-    await fetch('/api/finetune-data-sets', {
-      method: 'PUT',
-      body: JSON.stringify({
-        id: dataSetId,
-        ...values,
-      }),
-    });
-    setEditing(false);
-    setIsTemplateSubmitLoading(false);
-    setIsUpdateTemplateDisabled(true);
-    await mutate(`/api/finetune-data-sets?dataSetId=${dataSetId}`);
-    await mutate('/api/finetune-data-sets');
+    try {
+      setIsTemplateSubmitLoading(true);
+      await fetch('/api/finetune-data-sets', {
+        method: 'PUT',
+        body: JSON.stringify({
+          id: dataSetId,
+          ...values,
+        }),
+      });
+      setEditing(false);
+      setIsTemplateSubmitLoading(false);
+      setIsUpdateTemplateDisabled(true);
+      await mutate(`/api/finetune-data-sets?dataSetId=${dataSetId}`);
+      await mutate('/api/finetune-data-sets');
+      await mutate(`/api/finetune-data/tokens?dataSetId=${dataSetId}`);
+    } catch (err) {
+      notification.error({
+        message: 'Failed to update',
+        description: err,
+      });
+    }
   };
 
   if (!dataSetResponse || !dataResponse) {
@@ -132,7 +152,14 @@ export default function FinetuneDataPage() {
           Download
         </Button>
       </div>
-      <Paragraph>You can set up your GPT-3 finetuning training data here.</Paragraph>
+
+      <div className="flex flex-row justify-between mb-4">
+        <Paragraph>You can set up your GPT-3 finetuning training data here.</Paragraph>
+        <Paragraph strong>
+          Total token count:
+          {totalTokens?.total}
+        </Paragraph>
+      </div>
 
       <Form
         form={templateForm}
@@ -144,13 +171,13 @@ export default function FinetuneDataPage() {
         onFinish={updateValues}
       >
         <div className="container mx-auto flex flex-row">
-          <div className="container mx-auto flex flex-col">
+          <div className="container mx-auto flex flex-col max-w-1/2">
             <Title level={4}>Prompt Template</Title>
             <Form.Item name="promptTemplate">
               <MonacoInput setIsUpdateTemplateDisabled={setIsUpdateTemplateDisabled} />
             </Form.Item>
           </div>
-          <div className="container mx-auto flex flex-col">
+          <div className="container mx-auto flex flex-col max-w-1/2">
             <Title level={4}>Completion Template</Title>
             <Form.Item name="completionTemplate">
               <MonacoInput setIsUpdateTemplateDisabled={setIsUpdateTemplateDisabled} />
@@ -192,6 +219,8 @@ export default function FinetuneDataPage() {
               }),
             });
             await mutate(`/api/finetune-data?dataSetId=${dataSetId}`);
+            await mutate(`/api/finetune-data-sets?dataSetId=${dataSetId}`);
+
             addRowForm.resetFields();
             setIsOpenEditModal(false);
           } catch (err) {
