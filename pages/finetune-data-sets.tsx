@@ -5,7 +5,7 @@ import { useRouter } from 'next/router';
 import { Typography, Button, Spin, notification } from 'antd';
 
 import { FinetuneDataSetsResponse } from './api/finetune-data-sets';
-import { fetcher } from '../utils/request';
+import { fetcher, fetchText } from '../utils/request';
 
 import { AppLayout } from '../components/AppLayout';
 import { FinetuneDataSetsTable } from '../components/finetune-data-sets/FinetuneDataSetsTable';
