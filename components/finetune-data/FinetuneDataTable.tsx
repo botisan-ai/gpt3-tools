@@ -78,6 +78,7 @@ export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: 
       });
       await mutate(`/api/finetune-data-sets?dataSetId=${dataSetId}`);
       await mutate(`/api/finetune-data?dataSetId=${dataSetId}`);
+      await mutate(`/api/finetune-data/tokens?dataSetId=${dataSetId}`);
       setEditingKey('');
     } catch (errInfo) {
       console.log('Validate Failed:', errInfo);
@@ -90,12 +91,14 @@ export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: 
       dataIndex: 'prompt',
       editable: true,
       render: (c) => <pre>{c}</pre>,
+      ellipsis: true,
     },
     {
       title: 'Completion',
       dataIndex: 'completion',
       editable: true,
       render: (c) => <pre>{c}</pre>,
+      ellipsis: true,
     },
     {
       title: 'Action',
