@@ -66,7 +66,6 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       res.statusCode = 200;
       res.json({ newDataSet: response });
-      //
     } else if (req.method === 'PUT') {
       const data = JSON.parse(req.body);
       const { id } = data;
@@ -90,7 +89,6 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       res.statusCode = 200;
       res.json({ updateDataSet: response });
-      //
     } else if (req.method === 'DELETE' && req.query.dataSetId) {
       const [_, data] = await prisma.$transaction([
         prisma.finetuneData.deleteMany({ where: { dataSetId: Number(req.query.dataSetId) } }),
@@ -99,7 +97,6 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       res.statusCode = 200;
       res.json(data);
-      //
     } else if (req.method === 'GET' && req.query.dataSetId && req.query.download) {
       const dataSetTemplate = await prisma.finetuneDataSet.findFirst({
         where: {
@@ -119,7 +116,6 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       res.setHeader('content-type', 'application/text');
       ftStream.pipe(res.status(200));
-      //
     } /* req.method === 'GET' */ else if (req.query.dataSetId) {
       const dataSet = await prisma.finetuneDataSet.findFirst({
         where: {
@@ -129,7 +125,6 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       res.statusCode = 200;
       res.json({ dataSet });
-      //
     } else {
       const dataSets = await prisma.finetuneDataSet.findMany();
 

@@ -22,7 +22,6 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange, setIsUpdate
 
   useEffect(() => {
     if (!value || value.length === 0 || shouldStopUpdating) return;
-    // console.log(`updating value to ${value}`);
     setEditorValue(value);
   }, [value, isRefSet, shouldStopUpdating]);
 
@@ -57,13 +56,7 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange, setIsUpdate
         minimap: {
           enabled: false,
         },
-        // lineN
-        // umbers: false,
       }}
-      // style={{
-      //   resize: 'vertical',
-      //   overflow: 'auto',
-      // }}
       defaultValue={value || editorValue}
       defaultLanguage="handlebars"
       height="100px"
