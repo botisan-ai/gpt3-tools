@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { encode } from 'gpt-3-encoder';
 
 import { PrismaClient, FinetuneData } from '@prisma/client';
 
@@ -16,12 +17,18 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
     if (req.method === 'POST') {
       const data = JSON.parse(req.body);
       const { dataSetId } = data;
+      const promptTokenCount = encode(data.prompt).length;
+      const completionTokenCount = encode(data.completion).length;
 
       if (!dataSetId) {
         throw new Error('dataSetId is required');
       }
       const response = await prisma.finetuneData.create({
-        data,
+        data: {
+          promptTokenCount,
+          completionTokenCount,
+          ...data,
+        },
       });
 
       res.statusCode = 200;
@@ -31,11 +38,12 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
     if (req.method === 'PUT') {
       const data = JSON.parse(req.body);
       const { id, dataSetId } = data;
+      const promptTokenCount = encode(data.prompt).length;
+      const completionTokenCount = encode(data.completion).length;
 
       if (!id) {
         throw new Error('id is required');
       }
-
       if (!dataSetId) {
         throw new Error('dataSetId is required');
       }
@@ -44,7 +52,11 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
         where: {
           id,
         },
-        data,
+        data: {
+          promptTokenCount,
+          completionTokenCount,
+          ...data,
+        },
       });
 
       res.statusCode = 200;
@@ -55,10 +67,12 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
           dataSetId: Number(req.query.dataSetId),
         },
       });
+
       res.statusCode = 200;
       res.json({ data });
     } else {
       const data = await prisma.finetuneData.findMany();
+
       res.statusCode = 200;
       res.json({ data });
     }

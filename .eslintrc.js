@@ -23,6 +23,8 @@ module.exports = {
     'no-nested-ternary': 'warn',
     'no-underscore-dangle': 'off',
     'no-script-url': 'warn',
+    'no-await-in-loop': 'warn',
+    "import/no-extraneous-dependencies": ["error", {"devDependencies": true}],
     'object-curly-newline': 'off',
     'jsx-a11y/anchor-is-valid': 'off',
     'jsx-a11y/click-events-have-key-events': 'warn',

@@ -6,9 +6,10 @@ const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 export interface MonacoInputProps {
   onChange?: (value?: string) => void;
   value?: string;
+  setIsUpdateTemplateDisabled: any;
 }
 
-export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInputProps) => {
+export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange, setIsUpdateTemplateDisabled }: MonacoInputProps) => {
   const editorRef = useRef();
   const [editorValue, setEditorValue] = useState('');
   const [isRefSet, setRefSet] = useState(false);
@@ -21,7 +22,6 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInp
 
   useEffect(() => {
     if (!value || value.length === 0 || shouldStopUpdating) return;
-    // console.log(`updating value to ${value}`);
     setEditorValue(value);
   }, [value, isRefSet, shouldStopUpdating]);
 
@@ -41,6 +41,9 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInp
   }, [editorValue, shouldStopUpdating]);
 
   const handleChange = (val: any) => {
+    if (setIsUpdateTemplateDisabled) {
+      setIsUpdateTemplateDisabled(false);
+    }
     setEditorValue(val);
     if (onChange) {
       onChange(val);
@@ -53,13 +56,13 @@ export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange }: MonacoInp
         minimap: {
           enabled: false,
         },
-        // lineNumbers: false,
       }}
       defaultValue={value || editorValue}
       defaultLanguage="handlebars"
       height="100px"
       onMount={setUpRef}
       onChange={(val) => handleChange(val)}
+      automaticLayout
     />
   );
 };
