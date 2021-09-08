@@ -1,9 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Handlebars from 'handlebars';
 import { encode, decode } from 'gpt-3-encoder';
+import getRawBody from 'raw-body';
 
 import { PrismaClient, FinetuneDataSet, FineTuneData } from '@prisma/client';
 import { Readable } from 'stream';
+import axios from 'axios';
+import FormData from 'form-data';
 
 const prisma = new PrismaClient();
 
@@ -116,6 +119,47 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       res.setHeader('content-type', 'application/text');
       ftStream.pipe(res.status(200));
+    } else if (req.method === 'GET' && req.query.dataSetId && req.query.start) {
+      const formData = new FormData();
+
+      const dataSetTemplate = await prisma.finetuneDataSet.findFirst({
+        where: {
+          id: Number(req.query.dataSetId),
+        },
+      });
+
+      const promptTemplate = Handlebars.compile(dataSetTemplate.promptTemplate);
+      const completionTemplate = Handlebars.compile(dataSetTemplate.completionTemplate);
+      const ftStream = createFinetuneDataStream(req.query.dataSetId, {
+        batchSize: 10000,
+        templates: {
+          prompt: promptTemplate,
+          completion: completionTemplate,
+        },
+      });
+
+      const response = await axios.get(`${process.env.BASE_URL as string}/upload`, {
+        headers: { Authorization: `jwt ${process.env.JWT_TOKEN as string}` },
+      });
+
+      Object.entries(response.data.fields).forEach(([k, v]) => {
+        formData.append(k, v);
+      });
+
+      const buffer = await getRawBody(ftStream, {
+        encoding: true,
+      });
+
+      formData.append('file', buffer);
+
+      const _response = await fetch(response.data.url, {
+        method: 'POST',
+        body: formData,
+      } as any);
+      console.log(_response);
+
+      res.statusCode = 200;
+      res.send(await _response.text());
     } /* req.method === 'GET' */ else if (req.query.dataSetId) {
       const dataSet = await prisma.finetuneDataSet.findFirst({
         where: {
@@ -132,6 +176,7 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
       res.json({ dataSets });
     }
   } catch (e) {
+    console.log(e);
     res.statusCode = 400;
     res.json({ message: (e as Error).message });
   }

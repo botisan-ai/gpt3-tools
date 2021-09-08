@@ -118,6 +118,11 @@ export default function FinetuneDataPage() {
     downloadFile(`${dataSet?.title}template.json`, res);
   };
 
+  const startProcess = async () => {
+    const res = await fetch(`/api/finetune-data-sets?dataSetId=${dataSetId}&start=true`);
+    console.log(await res.json());
+  };
+
   return (
     <AppLayout>
       <Head>
@@ -150,6 +155,10 @@ export default function FinetuneDataPage() {
         )}
         <Button type="primary" onClick={() => downloadTemplate()} icon={<DownloadOutlined />} className="flex items-center">
           Download
+        </Button>
+
+        <Button type="primary" onClick={() => startProcess()} className="flex items-center">
+          Start
         </Button>
       </div>
 
