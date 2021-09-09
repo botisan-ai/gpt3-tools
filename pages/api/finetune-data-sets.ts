@@ -3,9 +3,8 @@ import Handlebars from 'handlebars';
 import { encode, decode } from 'gpt-3-encoder';
 import getRawBody from 'raw-body';
 
-import { PrismaClient, FinetuneDataSet, FineTuneData } from '@prisma/client';
+import { PrismaClient, FinetuneDataSet } from '@prisma/client';
 import { Readable } from 'stream';
-import axios from 'axios';
 import FormData from 'form-data';
 
 const prisma = new PrismaClient();
@@ -15,12 +14,24 @@ export interface FinetuneDataSetsResponse {
   dataSets?: FinetuneDataSet[];
   newDataSet?: FinetuneDataSet;
   updateDataSet?: FinetuneDataSet;
+  deletedDataSet?: FinetuneDataSet;
   message?: string;
   exportTemplate?: string;
 }
 
-function createFinetuneDataStream(dataSetId, { batchSize, templates: { prompt, completion } }: any) {
-  let cursorId: string;
+interface IOpenApiResponse {
+  url: string;
+  fields: {
+    key: string;
+    AWSAccessKeyId: string;
+    'x-amz-security-token': string;
+    policy: string;
+    signature: string;
+  };
+}
+
+function createFinetuneDataStream(dataSetId: string, { batchSize, templates: { prompt, completion } }: any) {
+  let cursorId: number;
 
   return new Readable({
     objectMode: true,
@@ -97,9 +108,9 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         prisma.finetuneData.deleteMany({ where: { dataSetId: Number(req.query.dataSetId) } }),
         prisma.finetuneDataSet.delete({ where: { id: Number(req.query.dataSetId) } }),
       ]);
-
+      console.log(data);
       res.statusCode = 200;
-      res.json(data);
+      res.json({ deletedDataSet: data });
     } else if (req.method === 'GET' && req.query.dataSetId && req.query.download) {
       const dataSetTemplate = await prisma.finetuneDataSet.findFirst({
         where: {
@@ -107,9 +118,9 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         },
       });
 
-      const promptTemplate = Handlebars.compile(dataSetTemplate.promptTemplate);
-      const completionTemplate = Handlebars.compile(dataSetTemplate.completionTemplate);
-      const ftStream = createFinetuneDataStream(req.query.dataSetId, {
+      const promptTemplate = Handlebars.compile(dataSetTemplate?.promptTemplate);
+      const completionTemplate = Handlebars.compile(dataSetTemplate?.completionTemplate);
+      const ftStream = createFinetuneDataStream(req.query.dataSetId as string, {
         batchSize: 10000,
         templates: {
           prompt: promptTemplate,
@@ -128,9 +139,9 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         },
       });
 
-      const promptTemplate = Handlebars.compile(dataSetTemplate.promptTemplate);
-      const completionTemplate = Handlebars.compile(dataSetTemplate.completionTemplate);
-      const ftStream = createFinetuneDataStream(req.query.dataSetId, {
+      const promptTemplate = Handlebars.compile(dataSetTemplate?.promptTemplate);
+      const completionTemplate = Handlebars.compile(dataSetTemplate?.completionTemplate);
+      const ftStream = createFinetuneDataStream(req.query.dataSetId as string, {
         batchSize: 10000,
         templates: {
           prompt: promptTemplate,
@@ -138,28 +149,37 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         },
       });
 
-      const response = await axios.get(`${process.env.BASE_URL as string}/upload`, {
+      const openApiResponse: IOpenApiResponse = await fetch(`${process.env.BASE_URL as string}/upload`, {
+        method: 'GET',
         headers: { Authorization: `jwt ${process.env.JWT_TOKEN as string}` },
-      });
+      }).then((response) => response.json());
 
-      Object.entries(response.data.fields).forEach(([k, v]) => {
+      Object.entries(openApiResponse.fields).forEach(([k, v]) => {
         formData.append(k, v);
       });
 
-      const buffer = await getRawBody(ftStream, {
-        encoding: true,
-      });
+      const buffer = await getRawBody(ftStream, { encoding: true });
 
       formData.append('file', buffer);
 
-      const _response = await fetch(response.data.url, {
+      const uploadResponse = await fetch(openApiResponse.url, {
         method: 'POST',
         body: formData,
-      } as any);
-      console.log(_response);
+      });
+
+      if (!uploadResponse.ok) {
+        console.log('Uploading finetune error');
+        return;
+      }
+
+      const startFinetuneResponse = await fetch(`${process.env.BASE_URL as string}/start`, {
+        method: 'POST',
+        headers: { Authorization: `jwt ${process.env.JWT_TOKEN as string}` },
+        body: JSON.stringify({ key: openApiResponse.fields.key }),
+      }).then((response) => response.json());
 
       res.statusCode = 200;
-      res.send(await _response.text());
+      res.send(startFinetuneResponse);
     } /* req.method === 'GET' */ else if (req.query.dataSetId) {
       const dataSet = await prisma.finetuneDataSet.findFirst({
         where: {
