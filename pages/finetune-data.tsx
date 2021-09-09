@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import useSWR, { SWRResponse, mutate } from 'swr';
 import { Typography, Form, Input, Button, Space, Modal, Spin, Divider, notification } from 'antd';
 import { EditOutlined, DownloadOutlined } from '@ant-design/icons';
+import { FinetuneData, FinetuneDataSet } from '@prisma/client';
 
 import { MonacoInput } from '../components/MonacoInput';
 import { AppLayout } from '../components/AppLayout';
@@ -15,28 +16,11 @@ import { downloadFile } from '../utils/browser';
 const { Title, Paragraph } = Typography;
 
 interface DataSetResponse {
-  dataSet: {
-    id: number;
-    createdAt: Date;
-    updatedAt: Date;
-    title: string;
-    promptTemplate: string;
-    completionTemplate: string;
-    totalTokenCount: number | null;
-  };
+  dataSet: FinetuneDataSet;
 }
 
 interface DataResponse {
-  data: {
-    id: number;
-    createdAt: Date;
-    updatedAt: Date;
-    dataSetId: number;
-    completion: string;
-    prompt: string;
-    promptTokenCount: number;
-    completionTokenCount: number;
-  }[];
+  data: FinetuneData[];
 }
 
 export default function FinetuneDataPage() {
@@ -62,7 +46,7 @@ export default function FinetuneDataPage() {
   const { data: totalTokens, error: totalTokensError } = useSWR(dataSetId ? `/api/finetune-data/tokens?dataSetId=${dataSetId}` : null, fetcher);
 
   const dataSet = dataSetResponse?.dataSet;
-  const originData = dataResponse?.data;
+  const originData = dataResponse?.data ? dataResponse?.data : [];
 
   useEffect(() => {
     if (dataSet) {

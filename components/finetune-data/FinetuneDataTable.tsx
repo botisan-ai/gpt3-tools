@@ -11,7 +11,7 @@ interface FinetuneDataTableProps {
 }
 
 interface Item {
-  id: string;
+  id: number;
   prompt: string;
   completion: string;
 }
@@ -50,7 +50,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ editing, dataIndex, title, 
 export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: FinetuneDataTableProps) => {
   const [form] = Form.useForm();
   const router = useRouter();
-  const [editingKey, setEditingKey] = useState('');
+  const [editingKey, setEditingKey] = useState(0);
   const dataSetId = Number(router.query.dataSetId);
   const isEditing = (record: Item) => record.id === editingKey;
 
@@ -60,13 +60,13 @@ export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: 
   };
 
   const cancel = () => {
-    setEditingKey('');
+    setEditingKey(0);
   };
 
   const save = async (id: number) => {
     try {
       const row = await form.validateFields();
-      setEditingKey('');
+      setEditingKey(0);
 
       await fetch('/api/finetune-data', {
         method: 'PUT',
@@ -79,25 +79,25 @@ export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: 
       await mutate(`/api/finetune-data-sets?dataSetId=${dataSetId}`);
       await mutate(`/api/finetune-data?dataSetId=${dataSetId}`);
       await mutate(`/api/finetune-data/tokens?dataSetId=${dataSetId}`);
-      setEditingKey('');
+      setEditingKey(0);
     } catch (errInfo) {
       console.log('Validate Failed:', errInfo);
     }
   };
 
-  const columns: ColumnsType<Item> = [
+  const columns = [
     {
       title: 'Prompt',
       dataIndex: 'prompt',
       editable: true,
-      render: (c) => <pre>{c}</pre>,
+      render: (c: string) => <pre>{c}</pre>,
       ellipsis: true,
     },
     {
       title: 'Completion',
       dataIndex: 'completion',
       editable: true,
-      render: (c) => <pre>{c}</pre>,
+      render: (c: string) => <pre>{c}</pre>,
       ellipsis: true,
     },
     {
@@ -107,7 +107,7 @@ export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: 
         const editable = isEditing(record);
         return editable ? (
           <span>
-            <a href="javascript:;" onClick={() => save(record.id as number)} style={{ marginRight: 8 }}>
+            <a href="javascript:;" onClick={() => save(record.id)} style={{ marginRight: 8 }}>
               Save
             </a>
             <Popconfirm title="Sure to cancel?" onConfirm={cancel}>
@@ -115,7 +115,7 @@ export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: 
             </Popconfirm>
           </span>
         ) : (
-          <Typography.Link disabled={editingKey !== ''} onClick={() => edit(record)}>
+          <Typography.Link disabled={!!editingKey} onClick={() => edit(record)}>
             Edit
           </Typography.Link>
         );
