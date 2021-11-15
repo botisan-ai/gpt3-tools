@@ -50,10 +50,11 @@ function createFinetuneDataStream(dataSetId: number, { batchSize, templates: { p
   });
 }
 
-const getTemplateTokenCount = (str: string) => {
+const getTemplateTokenCount = (str: string): number => {
   const substring = str.substring(str.indexOf('{{'), str.indexOf('}}') + 2);
   const newStr = str.replace(substring, '');
-  return encode(newStr).length;
+  const encoded = encode(newStr);
+  return encoded.length;
 };
 
 export default async function finetuneDataSetsApi(req: NextApiRequest, res: NextApiResponse<FinetuneDataSetsResponse>): Promise<void> {
