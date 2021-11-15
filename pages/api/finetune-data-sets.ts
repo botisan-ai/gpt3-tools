@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Handlebars from 'handlebars';
-import { encode, decode } from 'gpt-3-encoder';
+import { encode } from 'gpt-3-encoder';
 
-import { PrismaClient, FinetuneDataSet, FineTuneData } from '@prisma/client';
+import { PrismaClient, FinetuneDataSet } from '@prisma/client';
 import { Readable } from 'stream';
 
 const prisma = new PrismaClient();
@@ -12,12 +12,13 @@ export interface FinetuneDataSetsResponse {
   dataSets?: FinetuneDataSet[];
   newDataSet?: FinetuneDataSet;
   updateDataSet?: FinetuneDataSet;
+  deletedDataSet?: FinetuneDataSet;
   message?: string;
   exportTemplate?: string;
 }
 
-function createFinetuneDataStream(dataSetId, { batchSize, templates: { prompt, completion } }: any) {
-  let cursorId: string;
+function createFinetuneDataStream(dataSetId: number, { batchSize, templates: { prompt, completion } }: any) {
+  let cursorId: number;
 
   return new Readable({
     objectMode: true,
@@ -52,7 +53,7 @@ function createFinetuneDataStream(dataSetId, { batchSize, templates: { prompt, c
 const getTemplateTokenCount = (str: string) => {
   const substring = str.substring(str.indexOf('{{'), str.indexOf('}}') + 2);
   const newStr = str.replace(substring, '');
-  return encode(newStr).length as number;
+  return encode(newStr).length;
 };
 
 export default async function finetuneDataSetsApi(req: NextApiRequest, res: NextApiResponse<FinetuneDataSetsResponse>): Promise<void> {
@@ -96,7 +97,7 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
       ]);
 
       res.statusCode = 200;
-      res.json(data);
+      res.json({ deletedDataSet: data });
     } else if (req.method === 'GET' && req.query.dataSetId && req.query.download) {
       const dataSetTemplate = await prisma.finetuneDataSet.findFirst({
         where: {
@@ -104,9 +105,15 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         },
       });
 
+      if (!dataSetTemplate) {
+        res.statusCode = 404;
+        res.json({ message: 'Data set not found' });
+        return;
+      }
+
       const promptTemplate = Handlebars.compile(dataSetTemplate.promptTemplate);
       const completionTemplate = Handlebars.compile(dataSetTemplate.completionTemplate);
-      const ftStream = createFinetuneDataStream(req.query.dataSetId, {
+      const ftStream = createFinetuneDataStream(Number(req.query.dataSetId), {
         batchSize: 10000,
         templates: {
           prompt: promptTemplate,
