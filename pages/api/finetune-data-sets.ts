@@ -71,8 +71,17 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
     } else if (req.method === 'PUT') {
       const data = JSON.parse(req.body);
       const { id } = data;
-      const promptTemplateTokenCount = getTemplateTokenCount(data.promptTemplate);
-      const completionTemplateTokenCount = getTemplateTokenCount(data.completionTemplate);
+
+      let promptTemplateTokenCount = 0;
+      let completionTemplateTokenCount = 0;
+
+      if (data.promptTemplate) {
+        promptTemplateTokenCount = getTemplateTokenCount(data.promptTemplate);
+      }
+
+      if (data.completionTemplate) {
+        completionTemplateTokenCount = getTemplateTokenCount(data.completionTemplate);
+      }
 
       if (!id) {
         throw new Error('id is required');
