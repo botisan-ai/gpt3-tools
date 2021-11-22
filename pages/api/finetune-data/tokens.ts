@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-import { PrismaClient, FinetuneDataSet, FineTuneData } from '@prisma/client';
+import { PrismaClient, FinetuneDataSet } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
