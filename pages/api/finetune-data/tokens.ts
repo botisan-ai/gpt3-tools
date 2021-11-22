@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-import { PrismaClient, FinetuneDataSet, FineTuneData } from '@prisma/client';
+import { PrismaClient, FinetuneDataSet } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -10,6 +10,7 @@ export interface FinetuneDataTokensResponse {
 }
 
 interface DataTokenCountResponse {
+  id: number;
   promptTokenCount: number;
   completionTokenCount: number;
 }
@@ -26,7 +27,8 @@ async function getTotalTokensCount(
     completionTemplateTokenCount: number;
   },
 ) {
-  let cursorId: string;
+  let cursorId: number;
+
   let total = 0;
   const dataTokenCount = await prisma.finetuneData.findMany({
     where: {
@@ -83,8 +85,8 @@ export default async function finetuneDataTokensApi(req: NextApiRequest, res: Ne
 
       const total = await getTotalTokensCount(req.query.dataSetId as string, {
         batchSize: 10000,
-        promptTemplateTokenCount: dataSet.promptTemplateTokenCount,
-        completionTemplateTokenCount: dataSet.completionTemplateTokenCount,
+        promptTemplateTokenCount: dataSet?.promptTemplateTokenCount,
+        completionTemplateTokenCount: dataSet?.completionTemplateTokenCount,
       });
 
       res.status(200).json({ total });
