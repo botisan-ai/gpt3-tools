@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Handlebars from 'handlebars';
-import { encode, decode } from 'gpt-3-encoder';
+import { encode } from 'gpt-3-encoder';
 import getRawBody from 'raw-body';
 
 import { PrismaClient, FinetuneDataSet } from '@prisma/client';
@@ -30,7 +30,7 @@ interface IOpenApiResponse {
   };
 }
 
-function createFinetuneDataStream(dataSetId: string, { batchSize, templates: { prompt, completion } }: any) {
+function createFinetuneDataStream(dataSetId: number, { batchSize, templates: { prompt, completion } }: any) {
   let cursorId: number;
 
   return new Readable({
@@ -63,10 +63,11 @@ function createFinetuneDataStream(dataSetId: string, { batchSize, templates: { p
   });
 }
 
-const getTemplateTokenCount = (str: string) => {
+const getTemplateTokenCount = (str: string): number => {
   const substring = str.substring(str.indexOf('{{'), str.indexOf('}}') + 2);
   const newStr = str.replace(substring, '');
-  return encode(newStr).length as number;
+  const encoded = encode(newStr);
+  return encoded.length;
 };
 
 export default async function finetuneDataSetsApi(req: NextApiRequest, res: NextApiResponse<FinetuneDataSetsResponse>): Promise<void> {
@@ -83,8 +84,17 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
     } else if (req.method === 'PUT') {
       const data = JSON.parse(req.body);
       const { id } = data;
-      const promptTemplateTokenCount = getTemplateTokenCount(data.promptTemplate);
-      const completionTemplateTokenCount = getTemplateTokenCount(data.completionTemplate);
+
+      let promptTemplateTokenCount = 0;
+      let completionTemplateTokenCount = 0;
+
+      if (data.promptTemplate) {
+        promptTemplateTokenCount = getTemplateTokenCount(data.promptTemplate);
+      }
+
+      if (data.completionTemplate) {
+        completionTemplateTokenCount = getTemplateTokenCount(data.completionTemplate);
+      }
 
       if (!id) {
         throw new Error('id is required');
@@ -118,9 +128,15 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         },
       });
 
-      const promptTemplate = Handlebars.compile(dataSetTemplate?.promptTemplate);
-      const completionTemplate = Handlebars.compile(dataSetTemplate?.completionTemplate);
-      const ftStream = createFinetuneDataStream(req.query.dataSetId as string, {
+      if (!dataSetTemplate) {
+        res.statusCode = 404;
+        res.json({ message: 'Data set not found' });
+        return;
+      }
+
+      const promptTemplate = Handlebars.compile(dataSetTemplate.promptTemplate);
+      const completionTemplate = Handlebars.compile(dataSetTemplate.completionTemplate);
+      const ftStream = createFinetuneDataStream(Number(req.query.dataSetId), {
         batchSize: 10000,
         templates: {
           prompt: promptTemplate,
@@ -141,7 +157,7 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       const promptTemplate = Handlebars.compile(dataSetTemplate?.promptTemplate);
       const completionTemplate = Handlebars.compile(dataSetTemplate?.completionTemplate);
-      const ftStream = createFinetuneDataStream(req.query.dataSetId as string, {
+      const ftStream = createFinetuneDataStream(Number(req.query.dataSetId), {
         batchSize: 10000,
         templates: {
           prompt: promptTemplate,
@@ -164,7 +180,7 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
 
       const uploadResponse = await fetch(openApiResponse.url, {
         method: 'POST',
-        body: formData,
+        body: formData as unknown as RequestInit['body'],
       });
 
       if (!uploadResponse.ok) {

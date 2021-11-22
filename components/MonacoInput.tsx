@@ -6,7 +6,7 @@ const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 export interface MonacoInputProps {
   onChange?: (value?: string) => void;
   value?: string;
-  setIsUpdateTemplateDisabled?: any;
+  setIsUpdateTemplateDisabled?: (isUpdateTemplateDisabled: boolean) => void;
 }
 
 export const MonacoInput: FC<MonacoInputProps> = ({ value, onChange, setIsUpdateTemplateDisabled }: MonacoInputProps) => {

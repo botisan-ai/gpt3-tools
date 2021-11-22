@@ -33,7 +33,7 @@ export const FinetuneDataSetsTable: FC<FinetuneDataSetsTableProps> = ({ dataSets
                 await mutate('/api/finetune-data-sets');
               } else {
                 notification.error({
-                  message: 'Failed to create new finetune data set.',
+                  message: 'Failed to delete new finetune data set.',
                   description: message,
                 });
               }

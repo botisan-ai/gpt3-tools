@@ -32,14 +32,20 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
       });
 
       res.statusCode = 200;
-      res.json({ data: response });
+      res.json({ newData: response });
       return;
     }
     if (req.method === 'PUT') {
       const data = JSON.parse(req.body);
       const { id, dataSetId } = data;
-      const promptTokenCount = encode(data.prompt).length;
-      const completionTokenCount = encode(data.completion).length;
+      let promptTokenCount = 0;
+      let completionTokenCount = 0;
+      if (data.prompt) {
+        promptTokenCount = encode(data.prompt).length;
+      }
+      if (data.completion) {
+        completionTokenCount = encode(data.completion).length;
+      }
 
       if (!id) {
         throw new Error('id is required');
