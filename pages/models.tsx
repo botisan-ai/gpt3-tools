@@ -40,7 +40,7 @@ export default function ModelsPage() {
   if (!data) {
     return (
       <AppLayout>
-        <Spin size="large" />
+        <Spin size="large" style={{ position: 'absolute', top: '50%', right: 'calc(50% - 150px)' }} />
       </AppLayout>
     );
   }

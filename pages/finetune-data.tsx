@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import useSWR, { SWRResponse, mutate } from 'swr';
-import { Typography, Form, Input, Button, Space, Modal, Spin, Divider, notification } from 'antd';
-import { EditOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Typography, Form, Input, Button, Space, Modal, Spin, Divider, notification, Upload, message } from 'antd';
+import { EditOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import { FinetuneData, FinetuneDataSet } from '@prisma/client';
 
 import { MonacoInput } from '../components/MonacoInput';
@@ -31,6 +31,7 @@ export default function FinetuneDataPage() {
   const [isOpenEditModal, setIsOpenEditModal] = useState(false);
   const [isTemplateSubmitLoading, setIsTemplateSubmitLoading] = useState(false);
   const [isUpdateTemplateDisabled, setIsUpdateTemplateDisabled] = useState(true);
+  const [isUploadDisabled, setIsUploadDisabled] = useState(false);
 
   const dataSetId = Number(router.query.dataSetId);
 
@@ -38,12 +39,17 @@ export default function FinetuneDataPage() {
     () => (dataSetId ? `/api/finetune-data-sets?dataSetId=${dataSetId}` : null),
     fetcher,
   );
-  const { data: dataResponse, error: dataError }: SWRResponse<DataResponse, Error> = useSWR(
-    () => (dataSetId ? `/api/finetune-data?dataSetId=${dataSetId}` : null),
-    fetcher,
-  );
+  const {
+    data: dataResponse,
+    error: dataError,
+    revalidate: revalidateDataResponse,
+  }: SWRResponse<DataResponse, Error> = useSWR(() => (dataSetId ? `/api/finetune-data?dataSetId=${dataSetId}` : null), fetcher);
 
-  const { data: totalTokens, error: totalTokensError } = useSWR(dataSetId ? `/api/finetune-data/tokens?dataSetId=${dataSetId}` : null, fetcher);
+  const {
+    data: totalTokens,
+    error: totalTokensError,
+    revalidate: revalidateTokens,
+  } = useSWR(dataSetId ? `/api/finetune-data/tokens?dataSetId=${dataSetId}` : null, fetcher);
 
   const dataSet = dataSetResponse?.dataSet;
   const originData = dataResponse?.data ? dataResponse?.data : [];
@@ -54,10 +60,10 @@ export default function FinetuneDataPage() {
     }
   }, [templateForm, dataSet]);
 
-  if (!dataSetResponse) {
+  if (!dataSetResponse || !dataResponse) {
     return (
       <AppLayout>
-        <Spin size="large" />
+        <Spin size="large" style={{ position: 'absolute', top: '50%', right: 'calc(50% - 150px)' }} />
       </AppLayout>
     );
   }
@@ -93,10 +99,6 @@ export default function FinetuneDataPage() {
     }
   };
 
-  if (!dataSetResponse || !dataResponse) {
-    return 'loading';
-  }
-
   const downloadTemplate = async () => {
     const res = await fetchText(`/api/finetune-data-sets?dataSetId=${dataSetId}&download=true`);
     downloadFile(`${dataSet?.title}template.json`, res);
@@ -105,6 +107,29 @@ export default function FinetuneDataPage() {
   const startProcess = async () => {
     const res = await fetch(`/api/finetune-data-sets?dataSetId=${dataSetId}&start=true`);
     console.log(await res.json());
+  };
+
+  const uploadCsvProps = {
+    name: 'file',
+    action: `/api/finetune-data/upload?dataSetId=${dataSetId}`,
+    headers: {
+      authorization: 'authorization-text',
+    },
+    async onChange(info: any) {
+      setIsUploadDisabled(true);
+      if (info.file.status !== 'uploading') {
+        console.log(info.file, info.fileList);
+        setIsUploadDisabled(false);
+      }
+      if (info.file.status === 'done') {
+        await Promise.all([revalidateDataResponse(), revalidateTokens()]);
+        notification.success({ message: `${info.file.name} file uploaded successfully` });
+      } else if (info.file.status === 'error') {
+        notification.error({ message: `${info.file.name} file upload failed.` });
+      }
+    },
+    showUploadList: false,
+    accept: '.csv',
   };
 
   return (
@@ -191,9 +216,16 @@ export default function FinetuneDataPage() {
           <Title className="inline-block" level={3}>
             Finetune Data
           </Title>
-          <Button type="default" onClick={() => setIsOpenEditModal(true)}>
-            Add Row
-          </Button>
+          <div>
+            <Button type="default" onClick={() => setIsOpenEditModal(true)}>
+              Add Row
+            </Button>
+            <Upload {...uploadCsvProps}>
+              <Button icon={<UploadOutlined />} style={{ marginLeft: '20px' }} loading={isUploadDisabled}>
+                Upload CSV
+              </Button>
+            </Upload>
+          </div>
         </div>
 
         <FinetuneDataTable finetuneData={originData} />
