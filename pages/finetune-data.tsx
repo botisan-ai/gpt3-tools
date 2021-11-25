@@ -32,6 +32,7 @@ export default function FinetuneDataPage() {
   const [isTemplateSubmitLoading, setIsTemplateSubmitLoading] = useState(false);
   const [isUpdateTemplateDisabled, setIsUpdateTemplateDisabled] = useState(true);
   const [isUploadDisabled, setIsUploadDisabled] = useState(false);
+  const [isCountingTokens, setIsCountingTokens] = useState(false);
 
   const dataSetId = Number(router.query.dataSetId);
 
@@ -122,7 +123,9 @@ export default function FinetuneDataPage() {
         setIsUploadDisabled(false);
       }
       if (info.file.status === 'done') {
+        setIsCountingTokens(true);
         await Promise.all([revalidateDataResponse(), revalidateTokens()]);
+        setIsCountingTokens(false);
         notification.success({ message: `${info.file.name} file uploaded successfully` });
       } else if (info.file.status === 'error') {
         notification.error({ message: `${info.file.name} file upload failed.` });
@@ -174,8 +177,10 @@ export default function FinetuneDataPage() {
       <div className="flex flex-row justify-between mb-4">
         <Paragraph>You can set up your GPT-3 finetuning training data here.</Paragraph>
         <Paragraph strong>
-          Total token count:
-          {totalTokens?.total}
+          {isCountingTokens
+            ? 'Counting tokens...'
+            : `Total token count:
+          ${totalTokens?.total}`}
         </Paragraph>
       </div>
 
