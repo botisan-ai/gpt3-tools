@@ -51,7 +51,6 @@ apiRoute.post(async (req, res) => {
           ...chunk,
         },
       });
-      console.log(response2.id);
     });
     parseStream.on('finish', () => {
       resolve();
