@@ -165,7 +165,7 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         },
       });
 
-      const openApiResponse: IOpenApiResponse = await fetch(`${process.env.BASE_URL as string}/upload`, {
+      const openApiResponse: IOpenApiResponse = await fetch(`${process.env.BASE_URL as string}/finetune_jobs/upload`, {
         method: 'GET',
         headers: { Authorization: `jwt ${process.env.JWT_TOKEN as string}` },
       }).then((response) => response.json());
@@ -188,7 +188,7 @@ export default async function finetuneDataSetsApi(req: NextApiRequest, res: Next
         return;
       }
 
-      const startFinetuneResponse = await fetch(`${process.env.BASE_URL as string}/start`, {
+      const startFinetuneResponse = await fetch(`${process.env.BASE_URL as string}/finetune_jobs/start`, {
         method: 'POST',
         headers: { Authorization: `jwt ${process.env.JWT_TOKEN as string}` },
         body: JSON.stringify({ key: openApiResponse.fields.key }),
