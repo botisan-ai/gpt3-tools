@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import Link from 'next/link';
 import { Layout, Menu } from 'antd';
-import { HomeOutlined, BookOutlined } from '@ant-design/icons';
+import { HomeOutlined, BookOutlined, BuildOutlined, ApartmentOutlined } from '@ant-design/icons';
 
 const { Sider } = Layout;
 
@@ -31,6 +31,12 @@ export const SideNav: FC<SideNavProps> = ({ selected, collapsed, setCollapsed }:
       </Menu.Item>
       <Menu.Item key="/finetune-data-sets" icon={<BookOutlined />}>
         <Link href="/finetune-data-sets">Finetune Data Sets</Link>
+      </Menu.Item>
+      <Menu.Item key="/models" icon={<BuildOutlined />}>
+        <Link href="/models">Models</Link>
+      </Menu.Item>
+      <Menu.Item key="/finetune-jobs" icon={<ApartmentOutlined />}>
+        <Link href="/finetune-jobs">Finetune jobs</Link>
       </Menu.Item>
     </Menu>
   </Sider>
