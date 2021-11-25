@@ -103,6 +103,8 @@ export const FinetuneDataTable: FC<FinetuneDataTableProps> = ({ finetuneData }: 
     {
       title: 'Action',
       dataIndex: 'operation',
+      width: '200px',
+      align: 'center',
       render: (_: any, record: Item) => {
         const editable = isEditing(record);
         return editable ? (
