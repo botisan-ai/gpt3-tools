@@ -48,7 +48,7 @@ export default function FinetuneDataSetsPage() {
     });
 
     const { newDataSet, message }: FinetuneDataSetsResponse = await response.json();
-
+    await revalidate();
     if (newDataSet) {
       await router.push(`/finetune-data?dataSetId=${newDataSet.id}`);
     } else {

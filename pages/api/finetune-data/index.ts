@@ -10,6 +10,7 @@ export interface FinetuneDataResponse {
   newData?: FinetuneData;
   updateData?: FinetuneData;
   message?: string;
+  count?: number;
 }
 
 export default async function finetuneDataApi(req: NextApiRequest, res: NextApiResponse<FinetuneDataResponse>): Promise<void> {
@@ -68,14 +69,24 @@ export default async function finetuneDataApi(req: NextApiRequest, res: NextApiR
       res.statusCode = 200;
       res.json({ updateData: response });
     } /* req.method === 'GET' */ else if (req.query.dataSetId) {
-      const data = await prisma.finetuneData.findMany({
+      const skip = Number(req.query?.skip || 0);
+      const take = Number(req.query?.take || 10);
+
+      const count = await prisma.finetuneData.count({
         where: {
           dataSetId: Number(req.query.dataSetId),
         },
       });
+      const data = await prisma.finetuneData.findMany({
+        where: {
+          dataSetId: Number(req.query.dataSetId),
+        },
+        skip: Number(skip),
+        take: Number(take),
+      });
 
       res.statusCode = 200;
-      res.json({ data });
+      res.json({ data, count });
     } else {
       const data = await prisma.finetuneData.findMany();
 

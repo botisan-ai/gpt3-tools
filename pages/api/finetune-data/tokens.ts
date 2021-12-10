@@ -85,8 +85,8 @@ export default async function finetuneDataTokensApi(req: NextApiRequest, res: Ne
 
       const total = await getTotalTokensCount(req.query.dataSetId as string, {
         batchSize: 10000,
-        promptTemplateTokenCount: dataSet?.promptTemplateTokenCount,
-        completionTemplateTokenCount: dataSet?.completionTemplateTokenCount,
+        promptTemplateTokenCount: Number(dataSet?.promptTemplateTokenCount),
+        completionTemplateTokenCount: Number(dataSet?.completionTemplateTokenCount),
       });
 
       res.status(200).json({ total });

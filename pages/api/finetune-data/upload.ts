@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import csv from 'papaparse';
 
 import { encode } from 'gpt-3-encoder';
-import { FinetuneDataResponse } from './index';
+import * as stream from 'stream';
 
 const prisma = new PrismaClient();
 
@@ -38,32 +38,37 @@ apiRoute.post(async (req, res) => {
   });
 
   await new Promise<void>((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    parseStream.on('data', async (chunk) => {
-      const promptTokenCount = encode(chunk.prompt).length;
-      const completionTokenCount = encode(chunk.completion).length;
+    const dbWriterStream = new stream.Writable({
+      objectMode: true,
+      write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void) {
+        const promptTokenCount = encode(chunk.prompt).length;
+        const completionTokenCount = encode(chunk.completion).length;
 
-      const response2 = await prisma.finetuneData.create({
-        data: {
-          dataSetId: Number(dataSetId),
-          promptTokenCount,
-          completionTokenCount,
-          ...chunk,
-        },
+        prisma.finetuneData
+          .create({
+            data: {
+              dataSetId: Number(dataSetId),
+              promptTokenCount,
+              completionTokenCount,
+              ...chunk,
+            },
+          })
+          .then(() => callback())
+          .catch((error) => callback(error));
+      },
+    });
+
+    dbWriterStream.on('error', (err) => {
+      reject(err);
+    });
+    fs.createReadStream(req.file.path)
+      .pipe(parseStream)
+      .pipe(dbWriterStream)
+      .on('finish', () => {
+        resolve();
+        console.log('finished');
       });
-    });
-    parseStream.on('finish', () => {
-      resolve();
-    });
-    parseStream.on('error', (err) => {
-      console.log(err);
-      parseStream.end();
-      reject();
-    });
-    fs.createReadStream(req.file.path).pipe(parseStream);
   });
-
-  console.log('done');
   await prisma.$disconnect();
   res.status(200).json({ data: 'success' });
 });

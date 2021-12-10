@@ -31,7 +31,6 @@ export default async function modelsApi(req: NextApiRequest, res: NextApiRespons
         method: 'GET',
         headers: { Authorization: `jwt ${process.env.JWT_TOKEN as string}`, 'Content-Type': 'application/json' },
       }).then((response) => response.json());
-      console.log(openApiModelsResponse);
       res.statusCode = 200;
       res.send(openApiModelsResponse.data);
     }
