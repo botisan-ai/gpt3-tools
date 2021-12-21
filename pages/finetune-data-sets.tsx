@@ -25,7 +25,7 @@ interface DataSetResponse {
 
 export default function FinetuneDataSetsPage() {
   const router = useRouter();
-  const { data, error }: SWRResponse<DataSetResponse, Error> = useSWR('/api/finetune-data-sets', fetcher);
+  const { data, error, revalidate }: SWRResponse<DataSetResponse, Error> = useSWR('/api/finetune-data-sets', fetcher);
 
   if (!data) {
     return (
@@ -48,7 +48,7 @@ export default function FinetuneDataSetsPage() {
     });
 
     const { newDataSet, message }: FinetuneDataSetsResponse = await response.json();
-
+    await revalidate();
     if (newDataSet) {
       await router.push(`/finetune-data?dataSetId=${newDataSet.id}`);
     } else {
@@ -74,7 +74,13 @@ export default function FinetuneDataSetsPage() {
         </Button>
       </Paragraph>
 
-      {data ? <FinetuneDataSetsTable dataSets={data.dataSets} /> : error ? <pre>{JSON.stringify(error, null, 2)}</pre> : <Spin size="large" />}
+      {data ? (
+        <FinetuneDataSetsTable dataSets={data.dataSets} revalidate={revalidate} />
+      ) : error ? (
+        <pre>{JSON.stringify(error, null, 2)}</pre>
+      ) : (
+        <Spin size="large" />
+      )}
     </AppLayout>
   );
 }
